@@ -1,0 +1,151 @@
+{
+    "dataset_reader": {
+        "type": "mteval",
+        "bert_name": "bert-base-uncased",
+        "inp_type": "metric",
+        "token_indexers": {
+            "bert": {
+                "type": "bert-pretrained",
+                "do_lowercase": true,
+                "pretrained_model": "bert-base-uncased",
+                "use_starting_offsets": true
+            }
+        }
+    },
+    "iterator": {
+        "type": "bucket",
+        "batch_size": 32,
+        "sorting_keys": [
+            [
+                "ref",
+                "num_tokens"
+            ],
+            [
+                "mt",
+                "num_tokens"
+            ]
+        ]
+    },
+    "model": {
+        "type": "esim_mt",
+        "dropout": 0.5,
+        "encoder": {
+            "type": "lstm",
+            "bidirectional": true,
+            "hidden_size": 300,
+            "input_size": 768,
+            "num_layers": 1
+        },
+        "inference_encoder": {
+            "type": "lstm",
+            "bidirectional": true,
+            "hidden_size": 300,
+            "input_size": 300,
+            "num_layers": 1
+        },
+        "initializer": [
+            [
+                ".*linear_layers.*weight",
+                {
+                    "type": "xavier_uniform"
+                }
+            ],
+            [
+                ".*linear_layers.*bias",
+                {
+                    "type": "zero"
+                }
+            ],
+            [
+                ".*weight_ih.*",
+                {
+                    "type": "xavier_uniform"
+                }
+            ],
+            [
+                ".*weight_hh.*",
+                {
+                    "type": "orthogonal"
+                }
+            ],
+            [
+                ".*bias_ih.*",
+                {
+                    "type": "zero"
+                }
+            ],
+            [
+                ".*bias_hh.*",
+                {
+                    "type": "lstm_hidden_bias"
+                }
+            ]
+        ],
+        "output_feedforward": {
+            "activations": [
+                "relu",
+                "linear"
+            ],
+            "dropout": [
+                0.5,
+                0
+            ],
+            "hidden_dims": [
+                300,
+                1
+            ],
+            "input_dim": 2400,
+            "num_layers": 2
+        },
+        "output_logit": {
+            "activations": "linear",
+            "hidden_dims": 1,
+            "input_dim": 300,
+            "num_layers": 1
+        },
+        "projection_feedforward": {
+            "activations": "relu",
+            "hidden_dims": 300,
+            "input_dim": 2400,
+            "num_layers": 1
+        },
+        "similarity_function": {
+            "type": "dot_product"
+        },
+        "text_field_embedder": {
+            "allow_unmatched_keys": true,
+            "embedder_to_indexer_map": {
+                "bert": [
+                    "bert",
+                    "bert-offsets"
+                ]
+            },
+            "token_embedders": {
+                "bert": {
+                    "type": "bert-pretrained",
+                    "pretrained_model": "bert-base-uncased"
+                }
+            }
+        }
+    },
+    "train_data_path": "../data/train.jsonl",
+    "validation_data_path": "../data/valid.jsonl",
+    "trainer": {
+        "cuda_device": 0,
+        "grad_norm": 10,
+        "learning_rate_scheduler": {
+            "type": "reduce_on_plateau",
+            "factor": 0.5,
+            "mode": "max",
+            "patience": 0
+        },
+        "num_epochs": 75,
+        "num_serialized_models_to_keep": 1,
+        "optimizer": {
+            "type": "adam",
+            "lr": 0.0004
+        },
+        "patience": 4,
+        "validation_metric": "+pearson"
+    }
+}
